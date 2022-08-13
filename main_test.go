@@ -60,7 +60,7 @@ func TestRemoveTrashArtifacts(t *testing.T) {
 
 func TestExportToGOOD(t *testing.T) {
 	var artis []*Artifact
-	for i := 0; i < 1_000_000; i++ {
+	for i := 0; i < 10000; i++ {
 		artis = append(artis, RandomArtifact(DomainBase4Chance))
 	}
 	subs := map[artifactStat]float32{
@@ -83,23 +83,66 @@ func TestExportToGOOD(t *testing.T) {
 func TestExportToGOODEmblemHell(t *testing.T) {
 	// 6 months of Emblem -> 1620 runs
 	// 6 months of Emblem -> 4320 runs if max refreshing
+	// 10000 resin -> 500 runs ~> 532 artifacts
 	var artis []*Artifact
-	for i := 0; i < 4320; i++ {
+	for i := 0; i < 1620; i++ {
 		artis = append(artis, RandomArtifactFromDomain("EmblemOfSeveredFate", "ShimenawasReminiscence"))
 	}
 	subs := map[artifactStat]float32{
-		CritRate:         1,
-		CritDmg:          1,
-		ATKP:             0.8,
-		EnergyRecharge:   0.8,
-		ElementalMastery: 0.5,
-		ATK:              0.25,
+		CritRate:       1,
+		CritDmg:        1,
+		ATKP:           0.8,
+		EnergyRecharge: 0.8,
+		ATK:            0.2,
 	}
-	artis = RemoveTrashArtifacts(artis, subs, 10)
+	artis = RemoveTrashArtifacts(artis, subs, 12)
 	export := ExportToGOOD(artis)
 	b, err := json.Marshal(export)
 	if err != nil {
 		t.Error(err)
 	}
 	os.WriteFile("goodExportEmblemTest.json", b, 0755)
+}
+
+func TestChancesToUpgrade(t *testing.T) {
+	var targetQuality float32 = 6.46
+	var domainRuns float64 = 12000 * 1.065
+	var repetitions float64 = 1000
+	subWeights := map[artifactStat]float32{
+		CritRate:       1,
+		CritDmg:        1,
+		ATKP:           0.8,
+		EnergyRecharge: 0.8,
+		ATK:            0.2,
+	}
+	upgradeCount := 0.0
+	for i := 0.0; i < repetitions; i++ {
+		for j := 0.0; j < domainRuns; j++ {
+			art := RandomArtifactFromDomain("Emblem", "Shime")
+			if art.Set != "Emblem" {
+				continue
+			}
+			if art.MainStat != EnergyRecharge {
+				continue
+			}
+			if art.subsQuality(subWeights) >= targetQuality {
+				upgradeCount++
+				break
+			}
+		}
+	}
+	t.Log(upgradeCount / repetitions)
+}
+
+func TestStrongbox(t *testing.T) {
+	var artis []*Artifact
+	for i := 0; i < 210; i++ {
+		artis = append(artis, RandomArtifactOfSet("CrimsonWitchOfFlames", StrongboxBase4Chance))
+	}
+	export := ExportToGOOD(artis)
+	b, err := json.Marshal(export)
+	if err != nil {
+		t.Error(err)
+	}
+	os.WriteFile("goodStrongbox.json", b, 0755)
 }

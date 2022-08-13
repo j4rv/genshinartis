@@ -2,7 +2,6 @@ package genshinartis
 
 import (
 	"fmt"
-	"math"
 	"math/rand"
 	"sort"
 )
@@ -27,15 +26,6 @@ func (s *ArtifactSubstat) randomizeValue() {
 
 func (s *ArtifactSubstat) String() string {
 	return fmt.Sprintf("%s: %.1f", s.Stat, s.Value)
-}
-
-func (s *ArtifactSubstat) RoundedValue() float32 {
-	switch s.Stat {
-	case ATK, DEF, HP, ElementalMastery:
-		return float32(math.Round(float64(s.Value)))
-	default:
-		return float32(math.Round(float64(s.Value)*10) / 10)
-	}
 }
 
 type Artifact struct {

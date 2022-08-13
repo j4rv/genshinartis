@@ -1,6 +1,8 @@
 package genshinartis
 
-import "math/rand"
+import (
+	"math/rand"
+)
 
 type artifactStat int
 
@@ -24,6 +26,21 @@ const (
 	PhysDMG
 	HealingBonus
 )
+
+// Weights from https://genshin-impact.fandom.com/wiki/Artifacts/Distribution
+// And https://genshin-impact.fandom.com/wiki/Artifacts/Stats
+var substatValues map[artifactStat][4]float32 = map[artifactStat][4]float32{
+	HP:               {209.13, 239.00, 268.88, 298.75},
+	ATK:              {13.62, 15.56, 17.51, 19.45},
+	DEF:              {16.20, 18.52, 20.83, 23.15},
+	HPP:              {4.08, 4.66, 5.25, 5.83},
+	ATKP:             {4.08, 4.66, 5.25, 5.83},
+	DEFP:             {5.10, 5.83, 6.56, 7.29},
+	ElementalMastery: {16.32, 18.65, 20.98, 23.31},
+	EnergyRecharge:   {4.53, 5.18, 5.83, 6.48},
+	CritRate:         {2.72, 3.11, 3.50, 3.89},
+	CritDmg:          {5.44, 6.22, 6.99, 7.77},
+}
 
 func (s artifactStat) String() string {
 	switch s {
@@ -67,90 +84,8 @@ func (s artifactStat) String() string {
 	return "Unknown"
 }
 
-func (s artifactStat) goodKey() string {
-	switch s {
-	case HP:
-		return "hp"
-	case ATK:
-		return "atk"
-	case DEF:
-		return "def"
-	case HPP:
-		return "hp_"
-	case ATKP:
-		return "atk_"
-	case DEFP:
-		return "def_"
-	case EnergyRecharge:
-		return "enerRech_"
-	case ElementalMastery:
-		return "eleMas"
-	case CritRate:
-		return "critRate_"
-	case CritDmg:
-		return "critDMG_"
-	case PyroDMG:
-		return "pyro_dmg_"
-	case ElectroDMG:
-		return "electro_dmg_"
-	case CryoDMG:
-		return "cryo_dmg_"
-	case HydroDMG:
-		return "hydro_dmg_"
-	case AnemoDMG:
-		return "anemo_dmg_"
-	case GeoDMG:
-		return "geo_dmg_"
-	case PhysDMG:
-		return "physical_dmg_"
-	case HealingBonus:
-		return "heal_"
-	}
-	return "unknown"
-}
-
-// Weights from https://genshin-impact.fandom.com/wiki/Artifacts/Distribution
-// And https://genshin-impact.fandom.com/wiki/Artifacts/Stats
-
 func (s artifactStat) RandomRollValue() float32 {
-	// For all substats, the following is true:
-	// Mid-high roll = highest roll * 0.9
-	// Mid roll      = highest roll * 0.8
-	// Low roll      = highest roll * 0.7
-	var highRoll float32
-	switch s {
-	case HP:
-		highRoll = 298.75
-	case ATK:
-		highRoll = 19.45
-	case DEF:
-		highRoll = 23.15
-	case HPP:
-		highRoll = 5.83
-	case ATKP:
-		highRoll = 5.83
-	case DEFP:
-		highRoll = 7.29
-	case ElementalMastery:
-		highRoll = 23.31
-	case EnergyRecharge:
-		highRoll = 6.48
-	case CritRate:
-		highRoll = 3.89
-	case CritDmg:
-		highRoll = 7.77
-	}
-
-	switch rand.Intn(4) {
-	case 0:
-		return highRoll * 0.7
-	case 1:
-		return highRoll * 0.8
-	case 2:
-		return highRoll * 0.9
-	default:
-		return highRoll
-	}
+	return substatValues[s][rand.Intn(4)]
 }
 
 var sandsWeightedStats = map[artifactStat]int{
