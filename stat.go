@@ -23,6 +23,7 @@ const (
 	HydroDMG
 	AnemoDMG
 	GeoDMG
+	DendroDMG
 	PhysDMG
 	HealingBonus
 )
@@ -76,6 +77,8 @@ func (s artifactStat) String() string {
 		return "Anemo DMG%"
 	case GeoDMG:
 		return "Geo DMG%"
+	case DendroDMG:
+		return "Dendro DMG%"
 	case PhysDMG:
 		return "Physical DMG%"
 	case HealingBonus:
@@ -97,15 +100,16 @@ var sandsWeightedStats = map[artifactStat]int{
 }
 
 var gobletWeightedStats = map[artifactStat]int{
-	HPP:              2125,
-	ATKP:             2125,
-	DEFP:             2000,
+	HPP:              1915,
+	ATKP:             1915,
+	DEFP:             1915,
 	PyroDMG:          500,
 	ElectroDMG:       500,
 	CryoDMG:          500,
 	HydroDMG:         500,
 	AnemoDMG:         500,
 	GeoDMG:           500,
+	DendroDMG:        500,
 	PhysDMG:          500,
 	ElementalMastery: 250,
 }

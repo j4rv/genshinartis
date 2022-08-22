@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"os"
+	"sort"
 	"strconv"
 	"testing"
 	"time"
@@ -134,15 +135,108 @@ func TestChancesToUpgrade(t *testing.T) {
 	t.Log(upgradeCount / repetitions)
 }
 
+func TestAvgOfDendroGoblets(t *testing.T) {
+	dendroGobletCount := 0.0
+	for n := 0; n < 1000; n++ {
+		for i := 0; i < 308; i++ {
+			art := RandomArtifactOfSet("CrimsonWitchOfFlames", StrongboxBase4Chance)
+			if art.MainStat == DendroDMG {
+				dendroGobletCount++
+			}
+		}
+	}
+	t.Log(dendroGobletCount / 1000.0)
+}
+
+func TestAvgOfEMGoblets(t *testing.T) {
+	count := 0.0
+	runsWithoutEMGoblet := 0
+	for n := 0; n < 1000; n++ {
+		gotOne := false
+		for i := 0; i < 210; i++ {
+			art := RandomArtifactOfSet("ViridescentVenerer", StrongboxBase4Chance)
+			if art.Slot == SlotGoblet && art.MainStat == ElementalMastery {
+				count++
+				gotOne = true
+			}
+		}
+		if !gotOne {
+			runsWithoutEMGoblet++
+		}
+	}
+	t.Log(count / 1000.0)
+	t.Log("Runs without EM Goblet:", runsWithoutEMGoblet)
+}
+
+func TestVVDomainRunsToGetEMGoblet(t *testing.T) {
+	neededRuns := []int{}
+
+	for i := 0; i < 10000; i++ {
+		count := 0
+		for {
+			count++
+			art := RandomArtifactFromDomain("VV", "Maidens")
+			if art.Set == "VV" && art.MainStat == ElementalMastery && art.Slot == SlotGoblet {
+				neededRuns = append(neededRuns, count)
+				break
+			}
+		}
+	}
+
+	sort.Ints(neededRuns)
+
+	t.Log("1% (PepeW):", neededRuns[100])
+	t.Log("10% (Luckiest):", neededRuns[1000])
+	t.Log("50% (Most people):", neededRuns[5000])
+	t.Log("90% (Unluckiest):", neededRuns[9000])
+	t.Log("99% (TrollDespair):", neededRuns[9900])
+}
+
+func TestStrongboxWithCertainMainAndSubs(t *testing.T) {
+	neededRuns := []int{}
+
+	for i := 0; i < 1000; i++ {
+		count := 0
+		for {
+			count++
+			art := RandomArtifactOfSet("CW", StrongboxBase4Chance)
+			if art.MainStat == HPP && art.Slot == SlotSands {
+				if !art.IsFourLiner {
+					continue
+				}
+
+				wantedSubsCount := 0
+				for _, sub := range art.SubStats {
+					switch sub.Stat {
+					case CritRate, CritDmg, ElementalMastery:
+						wantedSubsCount++
+					}
+				}
+
+				if wantedSubsCount == 3 {
+					neededRuns = append(neededRuns, count)
+					break
+				}
+			}
+		}
+	}
+
+	sort.Ints(neededRuns)
+
+	t.Log("10% (Luckiest):", neededRuns[100])
+	t.Log("50% (Most people):", neededRuns[500])
+	t.Log("90% (Unluckiest):", neededRuns[900])
+}
+
 func TestStrongbox(t *testing.T) {
 	var artis []*Artifact
 	for i := 0; i < 210; i++ {
-		artis = append(artis, RandomArtifactOfSet("CrimsonWitchOfFlames", StrongboxBase4Chance))
+		artis = append(artis, RandomArtifactOfSet("ViridescentVenerer", StrongboxBase4Chance))
 	}
 	export := ExportToGOOD(artis)
 	b, err := json.Marshal(export)
 	if err != nil {
 		t.Error(err)
 	}
-	os.WriteFile("goodStrongbox.json", b, 0755)
+	os.WriteFile("goodStrongbox_withDendro.json", b, 0755)
 }

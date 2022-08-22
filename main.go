@@ -7,8 +7,9 @@ import (
 )
 
 const MaxSubstats = 4
-const DomainBase4Chance = 0.2
-const StrongboxBase4Chance = 0.33333333333
+const DomainBase4Chance = 1.0 / 5.0
+const StrongboxBase4Chance = 1.0 / 3.0
+const BossBase4Chance = 1.0 / 3.0
 const AverageDropsPerDomainRun = 1.065
 
 type ArtifactSubstat struct {
@@ -29,10 +30,11 @@ func (s *ArtifactSubstat) String() string {
 }
 
 type Artifact struct {
-	Set      artifactSet
-	Slot     artifactSlot
-	MainStat artifactStat
-	SubStats [MaxSubstats]*ArtifactSubstat
+	Set         artifactSet
+	Slot        artifactSlot
+	MainStat    artifactStat
+	SubStats    [MaxSubstats]*ArtifactSubstat
+	IsFourLiner bool
 }
 
 func (a Artifact) subsQuality(subValue map[artifactStat]float32) float32 {
@@ -70,6 +72,7 @@ func (a *Artifact) randomizeSubstats(base4Chance float32) {
 	numRolls := 3 + 5 // starts with 3 subs by default
 	if rand.Float32() <= base4Chance {
 		numRolls++ // starts with 4 subs
+		a.IsFourLiner = true
 	}
 
 	a.SubStats = [MaxSubstats]*ArtifactSubstat{}

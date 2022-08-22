@@ -110,6 +110,8 @@ func goodStatKey(s artifactStat) string {
 		return "anemo_dmg_"
 	case GeoDMG:
 		return "geo_dmg_"
+	case DendroDMG:
+		return "dendro_dmg_"
 	case PhysDMG:
 		return "physical_dmg_"
 	case HealingBonus:
