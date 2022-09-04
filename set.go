@@ -3,7 +3,7 @@ package genshinartis
 type artifactSet string
 
 // 5* sets only though
-var allArtifactSets = []artifactSet{
+var AllArtifactSets = []artifactSet{
 	"GladiatorsFinale",
 	"WanderersTroupe",
 	"Thundersoother",

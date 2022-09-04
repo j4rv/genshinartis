@@ -37,10 +37,11 @@ type Artifact struct {
 	IsFourLiner bool
 }
 
-func (a Artifact) subsQuality(subValue map[artifactStat]float32) float32 {
+func (a Artifact) subsQuality(wantedSubWeights map[artifactStat]float32) float32 {
 	var quality float32
 	for _, sub := range a.SubStats {
-		quality += float32(sub.Rolls) * subValue[sub.Stat]
+		maxPossibleValue := substatValues[sub.Stat][3]
+		quality += wantedSubWeights[sub.Stat] * float32(sub.Value) / maxPossibleValue
 	}
 	return quality
 }
@@ -99,7 +100,7 @@ func (a *Artifact) randomizeSubstats(base4Chance float32) {
 
 func RandomArtifact(base4Chance float32) *Artifact {
 	var artifact Artifact
-	artifact.randomizeSet(allArtifactSets...)
+	artifact.randomizeSet(AllArtifactSets...)
 	artifact.randomizeSlot()
 	artifact.ranzomizeMainStat()
 	artifact.randomizeSubstats(base4Chance)
@@ -108,7 +109,7 @@ func RandomArtifact(base4Chance float32) *Artifact {
 
 func RandomArtifactOfSlot(slot artifactSlot, base4Chance float32) *Artifact {
 	var artifact Artifact
-	artifact.randomizeSet(allArtifactSets...)
+	artifact.randomizeSet(AllArtifactSets...)
 	artifact.Slot = slot
 	artifact.ranzomizeMainStat()
 	artifact.randomizeSubstats(base4Chance)

@@ -92,36 +92,36 @@ func (s artifactStat) RandomRollValue() float32 {
 }
 
 var sandsWeightedStats = map[artifactStat]int{
-	HPP:              2668,
-	ATKP:             2666,
-	DEFP:             2666,
-	EnergyRecharge:   1000,
-	ElementalMastery: 1000,
+	HPP:              26_680,
+	ATKP:             26_660,
+	DEFP:             26_660,
+	EnergyRecharge:   10_000,
+	ElementalMastery: 10_000,
 }
 
 var gobletWeightedStats = map[artifactStat]int{
-	HPP:              1915,
-	ATKP:             1915,
-	DEFP:             1915,
-	PyroDMG:          500,
-	ElectroDMG:       500,
-	CryoDMG:          500,
-	HydroDMG:         500,
-	AnemoDMG:         500,
-	GeoDMG:           500,
-	DendroDMG:        500,
-	PhysDMG:          500,
-	ElementalMastery: 250,
+	HPP:              19_175,
+	ATKP:             19_175,
+	DEFP:             19_150,
+	PyroDMG:          5_000,
+	ElectroDMG:       5_000,
+	CryoDMG:          5_000,
+	HydroDMG:         5_000,
+	AnemoDMG:         5_000,
+	GeoDMG:           5_000,
+	DendroDMG:        5_000,
+	PhysDMG:          5_000,
+	ElementalMastery: 2_500,
 }
 
 var circletWeightedStats = map[artifactStat]int{
-	HPP:              2200,
-	ATKP:             2200,
-	DEFP:             2200,
-	CritRate:         1000,
-	CritDmg:          1000,
-	HealingBonus:     1000,
-	ElementalMastery: 400,
+	HPP:              22_000,
+	ATKP:             22_000,
+	DEFP:             22_000,
+	CritRate:         10_000,
+	CritDmg:          10_000,
+	HealingBonus:     10_000,
+	ElementalMastery: 4_000,
 }
 
 const (
