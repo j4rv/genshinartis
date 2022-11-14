@@ -26,4 +26,8 @@ var AllArtifactSets = []artifactSet{
 	"OceanHuedClam",
 	"EchoesOfAnOffering",
 	"VermillionHereafter",
+	"DeepwoodMemories",
+	"GildedDreams",
+	"DesertPavilionChronicle",
+	"FlowerOfParadiseLost",
 }
