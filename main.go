@@ -13,7 +13,7 @@ const BossBase4Chance = 1.0 / 3.0
 const AverageDropsPerDomainRun = 1.065
 
 type ArtifactSubstat struct {
-	Stat  artifactStat
+	Stat  stat
 	Rolls int
 	Value float32
 }
@@ -30,20 +30,42 @@ func (s *ArtifactSubstat) String() string {
 }
 
 type Artifact struct {
-	Set         artifactSet
-	Slot        artifactSlot
-	MainStat    artifactStat
-	SubStats    [MaxSubstats]*ArtifactSubstat
-	IsFourLiner bool
+	Set           artifactSet
+	Slot          artifactSlot
+	MainStat      stat
+	MainStatValue float32
+	SubStats      [MaxSubstats]*ArtifactSubstat
+	IsFourLiner   bool
 }
 
-func (a Artifact) subsQuality(wantedSubWeights map[artifactStat]float32) float32 {
+func (a Artifact) String() string {
+	subsStr := ""
+	for _, s := range a.SubStats {
+		subsStr += s.String() + "\n"
+	}
+	return fmt.Sprintf("Set: %s, main stat: %s\n%s", a.Set, a.MainStat, subsStr)
+}
+
+func (a Artifact) subsQuality(wantedSubWeights map[stat]float32) float32 {
 	var quality float32
 	for _, sub := range a.SubStats {
 		maxPossibleValue := substatValues[sub.Stat][3]
 		quality += wantedSubWeights[sub.Stat] * float32(sub.Value) / maxPossibleValue
 	}
 	return quality
+}
+
+func (a Artifact) cv() float32 {
+	var cv float32
+	for _, sub := range a.SubStats {
+		switch sub.Stat {
+		case CritRate:
+			cv += sub.Value * 2
+		case CritDmg:
+			cv += sub.Value
+		}
+	}
+	return cv
 }
 
 func (a *Artifact) randomizeSet(options ...artifactSet) {
@@ -67,6 +89,7 @@ func (a *Artifact) ranzomizeMainStat() {
 	case SlotCirclet:
 		a.MainStat = weightedRand(circletWeightedStats)
 	}
+	a.MainStatValue = mainStatValues[a.MainStat]
 }
 
 func (a *Artifact) randomizeSubstats(base4Chance float32) {
@@ -78,14 +101,14 @@ func (a *Artifact) randomizeSubstats(base4Chance float32) {
 
 	a.SubStats = [MaxSubstats]*ArtifactSubstat{}
 	possibleStats := weightedSubstats(a.MainStat)
-	var subs [MaxSubstats]artifactStat
+	var subs [MaxSubstats]stat
 	for i := 0; i < numRolls; i++ {
 		// First 4 rolls
 		if i < MaxSubstats {
-			stat := weightedRand(possibleStats)
-			subs[i] = stat
-			a.SubStats[i] = &ArtifactSubstat{Stat: stat, Rolls: 1}
-			delete(possibleStats, stat)
+			artiStat := weightedRand(possibleStats)
+			subs[i] = artiStat
+			a.SubStats[i] = &ArtifactSubstat{Stat: artiStat, Rolls: 1}
+			delete(possibleStats, artiStat)
 		} else {
 			// Rest of rolls
 			index := rand.Intn(MaxSubstats)
@@ -138,12 +161,12 @@ func RandomArtifactFromDomain(setA, setB string) *Artifact {
 // subValue: To know which artifacts are more desirable
 // n: Amount of artifacts to keep for every set, slot and main stat (example: n = 10, it will keep at most 10 gladiator atk sands)
 func RemoveTrashArtifacts(arts []*Artifact,
-	subValue map[artifactStat]float32,
+	subValue map[stat]float32,
 	n int) []*Artifact {
 	type SetSlotStat struct {
-		set  artifactSet
-		slot artifactSlot
-		stat artifactStat
+		set      artifactSet
+		slot     artifactSlot
+		mainStat stat
 	}
 	processed := map[SetSlotStat][]*Artifact{}
 	for _, art := range arts {

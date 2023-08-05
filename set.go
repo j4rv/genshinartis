@@ -30,4 +30,8 @@ var AllArtifactSets = []artifactSet{
 	"GildedDreams",
 	"DesertPavilionChronicle",
 	"FlowerOfParadiseLost",
+	"NymphsDream",
+	"VourukashasGlow",
+	"MarechausseeHunter",
+	"GoldenTroupe",
 }

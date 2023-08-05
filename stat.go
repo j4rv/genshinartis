@@ -4,10 +4,10 @@ import (
 	"math/rand"
 )
 
-type artifactStat int
+type stat int
 
 const (
-	HP artifactStat = iota
+	HP stat = iota
 	ATK
 	DEF
 	HPP
@@ -26,11 +26,12 @@ const (
 	DendroDMG
 	PhysDMG
 	HealingBonus
+
+	GlobalDMGBonus
+	BaseDMGIncrease
 )
 
-// Weights from https://genshin-impact.fandom.com/wiki/Artifacts/Distribution
-// And https://genshin-impact.fandom.com/wiki/Artifacts/Stats
-var substatValues map[artifactStat][4]float32 = map[artifactStat][4]float32{
+var substatValues map[stat][4]float32 = map[stat][4]float32{
 	HP:               {209.13, 239.00, 268.88, 298.75},
 	ATK:              {13.62, 15.56, 17.51, 19.45},
 	DEF:              {16.20, 18.52, 20.83, 23.15},
@@ -43,7 +44,28 @@ var substatValues map[artifactStat][4]float32 = map[artifactStat][4]float32{
 	CritDmg:          {5.44, 6.22, 6.99, 7.77},
 }
 
-func (s artifactStat) String() string {
+var mainStatValues map[stat]float32 = map[stat]float32{
+	HP:               4780,
+	ATK:              311,
+	HPP:              46.6,
+	ATKP:             46.6,
+	DEFP:             58.3,
+	ElementalMastery: 186.5,
+	EnergyRecharge:   51.8,
+	PyroDMG:          46.6,
+	ElectroDMG:       46.6,
+	CryoDMG:          46.6,
+	HydroDMG:         46.6,
+	AnemoDMG:         46.6,
+	GeoDMG:           46.6,
+	DendroDMG:        46.6,
+	PhysDMG:          58.3,
+	CritRate:         31.1,
+	CritDmg:          62.2,
+	HealingBonus:     35.9,
+}
+
+func (s stat) String() string {
 	switch s {
 	case HP:
 		return "HP"
@@ -87,11 +109,14 @@ func (s artifactStat) String() string {
 	return "Unknown"
 }
 
-func (s artifactStat) RandomRollValue() float32 {
+func (s stat) RandomRollValue() float32 {
 	return substatValues[s][rand.Intn(4)]
 }
 
-var sandsWeightedStats = map[artifactStat]int{
+// Weights from https://genshin-impact.fandom.com/wiki/Artifacts/Distribution
+// And https://genshin-impact.fandom.com/wiki/Artifacts/Stats
+
+var sandsWeightedStats = map[stat]int{
 	HPP:              26_680,
 	ATKP:             26_660,
 	DEFP:             26_660,
@@ -99,7 +124,7 @@ var sandsWeightedStats = map[artifactStat]int{
 	ElementalMastery: 10_000,
 }
 
-var gobletWeightedStats = map[artifactStat]int{
+var gobletWeightedStats = map[stat]int{
 	HPP:              19_175,
 	ATKP:             19_175,
 	DEFP:             19_150,
@@ -114,7 +139,7 @@ var gobletWeightedStats = map[artifactStat]int{
 	ElementalMastery: 2_500,
 }
 
-var circletWeightedStats = map[artifactStat]int{
+var circletWeightedStats = map[stat]int{
 	HPP:              22_000,
 	ATKP:             22_000,
 	DEFP:             22_000,
@@ -130,8 +155,8 @@ const (
 	critSubstatWeight   = 75
 )
 
-func weightedSubstats(mainStat artifactStat) map[artifactStat]int {
-	weightedSubs := map[artifactStat]int{
+func weightedSubstats(mainStat stat) map[stat]int {
+	weightedSubs := map[stat]int{
 		HP:               flatSubstatWeight,
 		ATK:              flatSubstatWeight,
 		DEF:              flatSubstatWeight,

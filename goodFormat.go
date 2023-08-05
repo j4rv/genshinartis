@@ -76,7 +76,7 @@ func goodSlotKey(s artifactSlot) string {
 	return "unknown"
 }
 
-func goodStatKey(s artifactStat) string {
+func goodStatKey(s stat) string {
 	switch s {
 	case HP:
 		return "hp"

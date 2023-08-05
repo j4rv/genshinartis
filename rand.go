@@ -5,7 +5,7 @@ import (
 	"math/rand"
 )
 
-func weightedRand(weightedVals map[artifactStat]int) artifactStat {
+func weightedRand(weightedVals map[stat]int) stat {
 	sum := 0
 	for _, weight := range weightedVals {
 		sum += weight

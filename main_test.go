@@ -2,6 +2,7 @@ package genshinartis
 
 import (
 	"encoding/json"
+	"log"
 	"math/rand"
 	"os"
 	"sort"
@@ -9,6 +10,86 @@ import (
 	"testing"
 	"time"
 )
+
+func TestOptimizer(t *testing.T) {
+	piecesToGenerate := 862
+	repetitions := 50
+	set := "MarechausseeHunter" // MarechausseeHunter / VermillionHereafter
+
+	c := character{
+		level:   90,
+		baseAtk: 349,
+		weapon:  weaponPJWSFullStacks,
+		bonusStats: map[stat]float32{
+			ATK:             1203,             // Benny
+			ATKP:            20 + 15 + 25,     // Tenacity, Noblesse, Pyro resonance, TTDS, etc
+			BaseDMGIncrease: 208.27,           // Faru A4
+			AnemoDMG:        22.5 + 95.2 + 15, // Faruzan, Xiao burst and Xiao A1
+			CritRate:        24.2 - 5,         // Xiao main stat
+			CritDmg:         40,               // Faruzan c6
+		},
+	}
+
+	var bestTargetValueSum float32
+	for i := 0; i < repetitions; i++ {
+		var artis []*Artifact
+		// Random pieces of an offset
+		for i := 0; i < piecesToGenerate*2; i++ {
+			arti := RandomArtifactOfSet("GladiatorsFinale", DomainBase4Chance)
+			artis = append(artis, arti)
+		}
+		// Random pieces of a specific set
+		for i := 0; i < piecesToGenerate; i++ {
+			artis = append(artis, RandomArtifactOfSet(set, DomainBase4Chance))
+			//artis = append(artis, RandomArtifactOfSet("VermillionHereafter", StrongboxBase4Chance))
+		}
+		subs := map[stat]float32{
+			ATK:      0.2,
+			ATKP:     0.8,
+			CritRate: 1,
+			CritDmg:  1,
+		}
+		artis = RemoveTrashArtifacts(artis, subs, 5)
+
+		config := optimizationConfig{
+			character: c,
+			target: attack{
+				element:       Anemo,
+				offensiveStat: ATK,
+				multiplier:    404,
+			},
+			artifacts: artis,
+		}
+
+		_, bestTargetValue := config.findBest(func(unfiltered []*Artifact) []*Artifact {
+			filtered := []*Artifact{}
+			for _, art := range unfiltered {
+				if art.Slot == SlotSands {
+					if art.MainStat != ATKP {
+						continue
+					}
+				}
+				if art.Slot == SlotGoblet {
+					if !(art.MainStat == AnemoDMG) {
+						continue
+					}
+				}
+				if art.Slot == SlotCirclet {
+					if !(art.MainStat == CritRate || art.MainStat == CritDmg) {
+						continue
+					}
+				}
+				filtered = append(filtered, art)
+			}
+			return filtered
+		})
+		log.Printf("Best value: %v", bestTargetValue)
+		bestTargetValueSum += bestTargetValue
+	}
+
+	log.Printf("Best value AVG: %v", bestTargetValueSum/float32(repetitions))
+	t.Error("Just to make VSCode show the logs ¯\\_(ツ)_/¯")
+}
 
 func TestRandomArtifactFromDomain(t *testing.T) {
 	rand.Seed(time.Now().UTC().UnixNano())
@@ -46,7 +127,7 @@ func TestRemoveTrashArtifacts(t *testing.T) {
 		artis = append(artis, RandomArtifactFromDomain(set1, set2))
 	}
 
-	subs := map[artifactStat]float32{
+	subs := map[stat]float32{
 		ATKP:           1,
 		CritRate:       1,
 		CritDmg:        1,
@@ -61,16 +142,34 @@ func TestRemoveTrashArtifacts(t *testing.T) {
 
 func TestExportToGOOD(t *testing.T) {
 	var artis []*Artifact
-	for i := 0; i < 10000; i++ {
-		artis = append(artis, RandomArtifact(DomainBase4Chance))
+
+	// Random pieces of any set
+	for i := 0; i < 2000; i++ {
+		arti := RandomArtifact(StrongboxBase4Chance)
+		if arti.Set == "MarechausseeHunter" || arti.Set == "VermillionHereafter" {
+			i--
+			continue
+		}
+		artis = append(artis, arti)
 	}
-	subs := map[artifactStat]float32{
-		ATKP:             1,
+
+	// Random pieces of a specific set
+	for i := 0; i < 1782; i++ {
+		artis = append(artis, RandomArtifactOfSet("MarechausseeHunter", StrongboxBase4Chance))
+		artis = append(artis, RandomArtifactOfSet("VermillionHereafter", StrongboxBase4Chance))
+	}
+
+	subs := map[stat]float32{
+		ATK:              0.2,
+		ATKP:             0.8,
+		HP:               0.2,
+		HPP:              0.8,
+		DEF:              0.2,
+		DEFP:             0.8,
+		ElementalMastery: 1,
+		EnergyRecharge:   1,
 		CritRate:         1,
 		CritDmg:          1,
-		ElementalMastery: 0.33,
-		EnergyRecharge:   0.25,
-		ATK:              0.25,
 	}
 	artis = RemoveTrashArtifacts(artis, subs, 10)
 	export := ExportToGOOD(artis)
@@ -78,7 +177,7 @@ func TestExportToGOOD(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	os.WriteFile("goodExportTest.json", b, 0755)
+	os.WriteFile("goodExport_"+time.Now().Format("2006-01-02_15.04.05")+".json", b, 0755)
 }
 
 func TestExportToGOODEmblemHell(t *testing.T) {
@@ -89,7 +188,7 @@ func TestExportToGOODEmblemHell(t *testing.T) {
 	for i := 0; i < 1620; i++ {
 		artis = append(artis, RandomArtifactFromDomain("EmblemOfSeveredFate", "ShimenawasReminiscence"))
 	}
-	subs := map[artifactStat]float32{
+	subs := map[stat]float32{
 		CritRate:       1,
 		CritDmg:        1,
 		ATKP:           0.8,
@@ -109,7 +208,7 @@ func TestChancesToUpgrade(t *testing.T) {
 	var targetQuality float32 = 6.46
 	var domainRuns float64 = 12000 * 1.065
 	var repetitions float64 = 1000
-	subWeights := map[artifactStat]float32{
+	subWeights := map[stat]float32{
 		CritRate:       1,
 		CritDmg:        1,
 		ATKP:           0.8,
@@ -148,6 +247,35 @@ func TestAvgOfDendroGoblets(t *testing.T) {
 	t.Log(dendroGobletCount / 1000.0)
 }
 
+func TestAvgOfHighCVPyroGoblets(t *testing.T) {
+	godPieces := 0.0
+	for n := 0; n < 1000; n++ {
+		for i := 0; i < 2000; i++ {
+			art := RandomArtifactOfSet("CrimsonWitchOfFlames", StrongboxBase4Chance)
+			if art.MainStat == DendroDMG && art.cv() >= 30 {
+				godPieces++
+			}
+		}
+	}
+	t.Log(godPieces / 1000.0)
+}
+
+func TestAvgOf40CVCritCirclets(t *testing.T) {
+	godPieces := 0.0
+	for n := 0; n < 1000; n++ {
+		for i := 0; i < 4745; i++ {
+			art := RandomArtifactOfSet("CrimsonWitchOfFlames", StrongboxBase4Chance)
+			if art.MainStat == CritDmg && art.cv() >= 40 {
+				godPieces++
+			}
+			if art.MainStat == CritRate && art.cv() >= 40 {
+				godPieces++
+			}
+		}
+	}
+	t.Log(godPieces / 1000.0)
+}
+
 func TestAvgOfEMGoblets(t *testing.T) {
 	count := 0.0
 	runsWithoutEMGoblet := 0
@@ -177,10 +305,10 @@ func TestVVDomainRunsToGetEMGoblet(t *testing.T) {
 			count++
 			art := RandomArtifactFromDomain("VV", "Maidens")
 			if art.Set == "VV" && art.MainStat == ElementalMastery && art.Slot == SlotGoblet {
-				neededRuns = append(neededRuns, count)
 				break
 			}
 		}
+		neededRuns = append(neededRuns, count)
 	}
 
 	sort.Ints(neededRuns)
