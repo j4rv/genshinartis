@@ -11,22 +11,23 @@ import (
 	"time"
 )
 
-func TestOptimizer(t *testing.T) {
-	piecesToGenerate := 862
+func TestXiaoSets(t *testing.T) {
+	piecesToGenerate := 1725
 	repetitions := 50
-	set := "MarechausseeHunter" // MarechausseeHunter / VermillionHereafter
+	set := "VermillionHereafter" // MarechausseeHunter / VermillionHereafter
+	minER := float32(140)
 
 	c := character{
 		level:   90,
 		baseAtk: 349,
-		weapon:  weaponPJWSFullStacks,
+		weapon:  weaponHomaPassiveOff,
 		bonusStats: map[stat]float32{
-			ATK:             1203,             // Benny
-			ATKP:            20 + 15 + 25,     // Tenacity, Noblesse, Pyro resonance, TTDS, etc
+			ATK:             1050.8,           // Benny. 1203 for Aquila, 1050.8 for Sapwood.
+			ATKP:            15,               // Tenacity, Noblesse, Pyro resonance, TTDS, etc
 			BaseDMGIncrease: 208.27,           // Faru A4
-			AnemoDMG:        22.5 + 95.2 + 15, // Faruzan, Xiao burst and Xiao A1
-			CritRate:        24.2 - 5,         // Xiao main stat
-			CritDmg:         40,               // Faruzan c6
+			AnemoDMG:        32.4 + 95.2 + 15, // Faruzan, Xiao burst and Xiao A1
+			CritRate:        19.2,             // Xiao main stat
+			//CritDmg:         40,                // Faruzan c6
 		},
 	}
 
@@ -44,10 +45,11 @@ func TestOptimizer(t *testing.T) {
 			//artis = append(artis, RandomArtifactOfSet("VermillionHereafter", StrongboxBase4Chance))
 		}
 		subs := map[stat]float32{
-			ATK:      0.2,
-			ATKP:     0.8,
-			CritRate: 1,
-			CritDmg:  1,
+			ATK:            0.2,
+			ATKP:           0.8,
+			EnergyRecharge: 1,
+			CritRate:       1,
+			CritDmg:        1,
 		}
 		artis = RemoveTrashArtifacts(artis, subs, 5)
 
@@ -61,7 +63,7 @@ func TestOptimizer(t *testing.T) {
 			artifacts: artis,
 		}
 
-		_, bestTargetValue := config.findBest(func(unfiltered []*Artifact) []*Artifact {
+		artifactFilter := func(unfiltered []*Artifact) []*Artifact {
 			filtered := []*Artifact{}
 			for _, art := range unfiltered {
 				if art.Slot == SlotSands {
@@ -82,7 +84,31 @@ func TestOptimizer(t *testing.T) {
 				filtered = append(filtered, art)
 			}
 			return filtered
-		})
+		}
+
+		buildFilter := func(build map[artifactSlot]*Artifact) bool {
+			setCount := 0
+			var er float32
+			for _, art := range build {
+				if art.Set == artifactSet(set) {
+					setCount++
+				}
+				for _, sub := range art.SubStats {
+					if sub.Stat == EnergyRecharge {
+						er += sub.Value
+					}
+				}
+			}
+			if setCount < 4 {
+				return false
+			}
+			if 100+er < minER {
+				return false
+			}
+			return true
+		}
+
+		_, bestTargetValue := config.findBest(artifactFilter, buildFilter)
 		log.Printf("Best value: %v", bestTargetValue)
 		bestTargetValueSum += bestTargetValue
 	}
@@ -144,32 +170,26 @@ func TestExportToGOOD(t *testing.T) {
 	var artis []*Artifact
 
 	// Random pieces of any set
-	for i := 0; i < 2000; i++ {
-		arti := RandomArtifact(StrongboxBase4Chance)
-		if arti.Set == "MarechausseeHunter" || arti.Set == "VermillionHereafter" {
-			i--
-			continue
-		}
-		artis = append(artis, arti)
-	}
+	//for i := 0; i < 862*2; i++ {
+	//	arti := RandomArtifact(StrongboxBase4Chance)
+	//	if arti.Set == "MarechausseeHunter" || arti.Set == "VermillionHereafter" {
+	//		i--
+	//		continue
+	//	}
+	//	artis = append(artis, arti)
+	//}
 
 	// Random pieces of a specific set
-	for i := 0; i < 1782; i++ {
-		artis = append(artis, RandomArtifactOfSet("MarechausseeHunter", StrongboxBase4Chance))
-		artis = append(artis, RandomArtifactOfSet("VermillionHereafter", StrongboxBase4Chance))
+	for i := 0; i < 200; i++ {
+		artis = append(artis, RandomArtifactOfSet("MarechausseeHunter", DomainBase4Chance))
 	}
 
 	subs := map[stat]float32{
-		ATK:              0.2,
-		ATKP:             0.8,
-		HP:               0.2,
-		HPP:              0.8,
-		DEF:              0.2,
-		DEFP:             0.8,
-		ElementalMastery: 1,
-		EnergyRecharge:   1,
-		CritRate:         1,
-		CritDmg:          1,
+		ATK:            0.2,
+		ATKP:           1,
+		EnergyRecharge: 0.5,
+		CritRate:       0.8,
+		CritDmg:        1,
 	}
 	artis = RemoveTrashArtifacts(artis, subs, 10)
 	export := ExportToGOOD(artis)

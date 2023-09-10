@@ -83,6 +83,7 @@ func (c character) stats() map[stat]float32 {
 	stats[DEF] = c.baseDef*(1+stats[DEFP]/100) + stats[DEF]
 	stats[CritRate] = 5 + stats[CritRate]
 	stats[CritDmg] = 50 + stats[CritDmg]
+	stats[EnergyRecharge] = 100 + stats[EnergyRecharge]
 
 	// apply weapon passive
 	if c.weapon.passive != nil {
@@ -100,10 +101,10 @@ type optimizationConfig struct {
 	artifacts []*Artifact
 }
 
-func (c optimizationConfig) findBest(filter func([]*Artifact) []*Artifact) (map[artifactSlot]*Artifact, float32) {
+func (c optimizationConfig) findBest(artifactFilter func([]*Artifact) []*Artifact, buildFilter func(map[artifactSlot]*Artifact) bool) (map[artifactSlot]*Artifact, float32) {
 	artifacts := c.artifacts
-	if filter != nil {
-		artifacts = filter(artifacts)
+	if artifactFilter != nil {
+		artifacts = artifactFilter(artifacts)
 	}
 
 	flowers := []*Artifact{}
@@ -142,6 +143,11 @@ func (c optimizationConfig) findBest(filter func([]*Artifact) []*Artifact) (map[
 							SlotGoblet:  goblet,
 							SlotCirclet: circlet,
 						}
+
+						if !buildFilter(build) {
+							continue
+						}
+
 						c.character.artifacts = build
 						value := c.calculateTargetValue()
 						if value > bestTargetValue {
