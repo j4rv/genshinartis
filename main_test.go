@@ -143,6 +143,102 @@ func TestRandomArtifactFromDomain(t *testing.T) {
 	}
 }
 
+func TestTimeToFarmTargetRV(t *testing.T) {
+	rand.Seed(time.Now().UTC().UnixNano())
+	var artis []*Artifact
+	set1, set2 := "Emblem", "Shimenawa"
+	targetRV := float32(26 * 0.85)
+	minER := float32(100)
+	iterations := 1000
+	neededRuns := []int{}
+
+	rvMultiplier := map[stat]float32{
+		ATKP:     1,
+		CritRate: 1,
+		CritDmg:  1,
+		ATK:      0.25,
+	}
+
+	validArtifact := func(art *Artifact) bool {
+		if art.Slot == SlotSands {
+			if art.MainStat != ATKP {
+				return false
+			}
+		}
+		if art.Slot == SlotGoblet {
+			if !(art.MainStat == AnemoDMG) {
+				return false
+			}
+		}
+		if art.Slot == SlotCirclet {
+			if !(art.MainStat == CritRate || art.MainStat == CritDmg) {
+				return false
+			}
+		}
+		return true
+	}
+
+	buildFilter := func(build map[artifactSlot]*Artifact) bool {
+		setCount := 0
+		var er float32
+		for _, art := range build {
+			if art.Set == artifactSet(set1) {
+				setCount++
+			}
+			for _, sub := range art.SubStats {
+				if sub.Stat == EnergyRecharge {
+					er += sub.Value
+				}
+			}
+		}
+		if setCount < 4 {
+			return false
+		}
+		if 100+er < minER {
+			return false
+		}
+		return true
+	}
+
+	domainRuns := 0
+	for i := 0; i < iterations; {
+		// one domain run
+		domainRuns++
+		art := RandomArtifactFromDomain(set1, set2)
+		if validArtifact(art) {
+			artis = append(artis, art)
+		}
+		if rand.Float32() <= DomainExtraArtifactChance {
+			art = RandomArtifactFromDomain(set1, set2)
+			if validArtifact(art) {
+				artis = append(artis, art)
+			}
+		}
+
+		// some cleaning
+		artis = RemoveTrashArtifacts(artis, rvMultiplier, 1)
+
+		// check target RV
+		_, rv := findHighestRV(artis, rvMultiplier, nil, buildFilter)
+		//log.Printf("Iteration %d, %d domain runs done, current max rv: %f, target: %f\n", i, domainRuns, rv, targetRV)
+		if rv >= targetRV {
+			log.Printf("Iteration %d, %d domain runs needed\n", i, domainRuns)
+			neededRuns = append(neededRuns, domainRuns)
+			// reset for next iteration
+			artis = nil
+			domainRuns = 0
+			i++
+		}
+	}
+
+	sort.Ints(neededRuns)
+	t.Log("1% (PepeW), domain runs needed:", neededRuns[10])
+	t.Log("10% (Luckiest), domain runs needed:", neededRuns[100])
+	t.Log("50% (Most people), domain runs needed:", neededRuns[500])
+	t.Log("90% (Unluckiest), domain runs needed:", neededRuns[900])
+	t.Log("99% (TrollDespair), domain runs needed:", neededRuns[990])
+}
+
 func TestRemoveTrashArtifacts(t *testing.T) {
 	rand.Seed(time.Now().UTC().UnixNano())
 	var artis []*Artifact

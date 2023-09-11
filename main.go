@@ -11,6 +11,7 @@ const DomainBase4Chance = 1.0 / 5.0
 const StrongboxBase4Chance = 1.0 / 3.0
 const BossBase4Chance = 1.0 / 3.0
 const AverageDropsPerDomainRun = 1.065
+const DomainExtraArtifactChance = 0.065
 
 type ArtifactSubstat struct {
 	Stat  stat

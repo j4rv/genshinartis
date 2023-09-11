@@ -163,6 +163,70 @@ func (c optimizationConfig) findBest(artifactFilter func([]*Artifact) []*Artifac
 	return best, bestTargetValue
 }
 
+func findHighestRV(artifacts []*Artifact, statRVMultipliers map[stat]float32, artifactFilter func([]*Artifact) []*Artifact, buildFilter func(map[artifactSlot]*Artifact) bool) (map[artifactSlot]*Artifact, float32) {
+	if artifactFilter != nil {
+		artifacts = artifactFilter(artifacts)
+	}
+
+	flowers := []*Artifact{}
+	plumes := []*Artifact{}
+	sandss := []*Artifact{}
+	goblets := []*Artifact{}
+	circlets := []*Artifact{}
+
+	for _, art := range artifacts {
+		switch art.Slot {
+		case SlotFlower:
+			flowers = append(flowers, art)
+		case SlotPlume:
+			plumes = append(plumes, art)
+		case SlotSands:
+			sandss = append(sandss, art)
+		case SlotGoblet:
+			goblets = append(goblets, art)
+		case SlotCirclet:
+			circlets = append(circlets, art)
+		}
+	}
+
+	var best map[artifactSlot]*Artifact
+	var bestRV float32
+
+	for _, flower := range flowers {
+		for _, plume := range plumes {
+			for _, sands := range sandss {
+				for _, goblet := range goblets {
+					for _, circlet := range circlets {
+						build := map[artifactSlot]*Artifact{
+							SlotFlower:  flower,
+							SlotPlume:   plume,
+							SlotSands:   sands,
+							SlotGoblet:  goblet,
+							SlotCirclet: circlet,
+						}
+
+						if !buildFilter(build) {
+							continue
+						}
+
+						rv := flower.subsQuality(statRVMultipliers)
+						rv += plume.subsQuality(statRVMultipliers)
+						rv += sands.subsQuality(statRVMultipliers)
+						rv += goblet.subsQuality(statRVMultipliers)
+						rv += circlet.subsQuality(statRVMultipliers)
+						if rv > bestRV {
+							best = build
+							bestRV = rv
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return best, bestRV
+}
+
 func (c optimizationConfig) calculateTargetValue() float32 {
 	t := c.target
 	stats := c.character.stats()
